@@ -133,13 +133,16 @@ class VerbalExpression {
     }
 
     public VerbalExpression range(Object[] args) {
+        /*if (args.length % 2 != 0) throw new Exception ("An arguement doesn't have a matching ending range.");*/
+        
         String value = "[";
-        for(int _from = 0; _from < args.length; _from += 2) {
+        for(int _from = 0, len = args.length; _from < len; _from += 2) {
             int _to = _from+1;
             if (args.length <= _to) break;
-            int from = Integer.getInteger(sanitize((String)args[_from]));
-            int to = Integer.getInteger(sanitize((String)args[_to]));
-
+            /*if (!args[_from].getClass().equals(args[_to].getClass())) throw new Exception ("Arguement types don't match.");*/
+            
+            String from = sanitize((String)args[_from]);
+            String to = sanitize((String)args[_to]);
             value += from + "-" + to;
         }
 
@@ -230,7 +233,8 @@ class VerbalExpression {
     }
 
     public VerbalExpression multiple(String value) {
-        value = this.sanitize(value);
+        /*value = this.sanitize(value);*/
+        /*System.out.println("value.charAt(0): "+value.charAt(0));*///Start Point
         switch (value.charAt(0)) {
             case '*':
             case '+':
