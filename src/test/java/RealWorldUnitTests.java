@@ -4,45 +4,48 @@ import org.junit.Ignore;
 import static org.junit.Assert.*;
 
 public class RealWorldUnitTests {
-   
-   @Test
-   public void testUrl() {
-      VerbalExpression testRegex = new VerbalExpression ()
-                                       .startOfLine()
-                                       .then("http")
-                                       .maybe("s")
-                                       .then("://")
-                                       .maybe("www.")
-                                       .anythingBut(" ")
-                                       .endOfLine();
 
-      // Create an example URL
-      String testUrl = "https://www.google.com";
-      assertTrue("Matches Google's url",testRegex.test(testUrl)); //True
+    @Test
+    public void testUrl() {
+        VerbalExpression testRegex = new VerbalExpression.Builder()
+                .startOfLine()
+                .then("http")
+                .maybe("s")
+                .then("://")
+                .maybe("www.")
+                .anythingButNot(" ")
+                .endOfLine()
+                .build();
 
-      assertEquals("Regex doesn't match same regex as in example", testRegex.toString(), "^(http)(s)?(\\:\\/\\/)(www\\.)?([^\\ ]*)$");
+        // Create an example URL
+        String testUrl = "https://www.google.com";
+        assertTrue("Matches Google's url", testRegex.test(testUrl)); //True
+        assertEquals("Regex doesn't match same regex as in example", testRegex.toString(), "^(http)(s)?(\\:\\/\\/)(www\\.)?([^\\ ]*)$");
    }
 
    @Ignore
    @Test
    public void testEmail () {
-      VerbalExpression testRegex = new VerbalExpression ()
+      VerbalExpression testRegex = new VerbalExpression.Builder()
                                        .startOfLine()
-                                       .range(new Object[]{"a","z","A","Z","0","9"}) //
-                                       .multiple("+")
+                                       .range("a","z","A","Z","0","9") //
+                                       .multiple("*")
                                        .anyOf("_.+-")
                                        .then("@")
-                                       .range(new Object[]{"a","z","A","Z","0","9",})
+                                       .range("a","z","A","Z","0","9")
                                        .multiple("+")
                                        .then(".")
-                                       .anythingBut(" ")
+                                       .range("a","z","A","Z","0","9")
+                                       .multiple("+")
+                                       /*.anythingButNot(" ")*/
                                        .endOfLine()
-                                       .withAnyCase();
+                                       /*.withAnyCase()*/
+                                       .build();
                                        
       System.out.println(testRegex.toString());
       int counter = 0;
       System.out.println("Counter: "+counter++);
-      assertTrue(testRegex.testExact("john@gmail.com"));
+      assertTrue(testRegex.test("john@gmail.com"));
       System.out.println("Counter: "+counter++);
       assertTrue(testRegex.testExact("john-123@gmail.com"));
       System.out.println("Counter: "+counter++);

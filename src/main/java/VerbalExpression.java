@@ -1,269 +1,283 @@
-import java.util.regex.Pattern;
+
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-class VerbalExpression {
-    private String prefixes = "", source = "", suffixes = "", pattern = "";
-    private int modifiers = Pattern.MULTILINE;
+public class VerbalExpression {
 
-    public VerbalExpression () {
-        this.updatePattern();
-    }
+    private Pattern pattern;
 
-    private String sanitize(String value) {
-        Matcher matcher = Pattern.compile("").matcher("").usePattern(Pattern.compile("[^\\w]"));
-        int lastEnd = 0;
-        String result = "";
-        matcher.reset(value);
-        boolean matcherCalled = false;
-        while (matcher.find()) {
-            matcherCalled = true;
-            if (matcher.start() != lastEnd) result += value.substring(lastEnd, matcher.start());
-            result += "\\" + value.substring(matcher.start(), matcher.end());
-            lastEnd = matcher.end();
-        }
-        if (!matcherCalled) return value;
-        return result;
-    }
+    public static class Builder {
 
-    public VerbalExpression add(String value) {
-        this.source += value;
-        return this.updatePattern();
-    }
+        private String prefixes = "", source = "", suffixes = "";
+        private Pattern pattern;
+        private int modifiers = Pattern.MULTILINE;
 
-    public VerbalExpression updatePattern() {
-        Pattern p = Pattern.compile(this.prefixes + this.source + this.suffixes, this.modifiers);
-        this.pattern = p.pattern();
-        return this;
-    }
-
-    public VerbalExpression startOfLine(boolean enable) {
-        this.prefixes = enable ? "^" : "";
-        this.updatePattern();
-        return this;
-    }
-
-    public VerbalExpression startOfLine() {
-        return startOfLine(true);
-    }
-
-    public VerbalExpression endOfLine(boolean enable) {
-        this.suffixes = enable ? "$" : "";
-        this.updatePattern();
-        return this;
-    }
-
-    public VerbalExpression endOfLine() {
-        return endOfLine(true);
-    }
-
-    public VerbalExpression then(String value) {
-        value = sanitize(value);
-        this.add("(" + value + ")");
-        return this;
-    }
-
-    public VerbalExpression find(String value) {
-        this.then(value);
-        return this;
-    }
-
-    public VerbalExpression maybe(String value) {
-        value = sanitize(value);
-        this.add("(" + value + ")?");
-        return this;
-    }
-
-    public VerbalExpression anything() {
-        this.add("(.*)");
-        return this;
-    }
-
-    public VerbalExpression anythingBut(String value) {
-        value = sanitize(value);
-        this.add("([^" + value + "]*)");
-        return this;
-    }
-
-    public VerbalExpression something() {
-        this.add("(.+)");
-        return this;
-    }
-
-    public VerbalExpression somethingBut(String value) {
-        value = sanitize(value);
-        this.add("([^" + value + "]+)");
-        return this;
-    }
-
-    public VerbalExpression replace(String source, String value) {
-        this.updatePattern();
-        this.source.replaceAll(pattern,value);
-        return this;
-    }
-
-    public VerbalExpression lineBreak() {
-        this.add("(\\n|(\\r\\n))");
-        return this;
-    }
-
-    public VerbalExpression br() {
-        this.lineBreak();
-        return this;
-    }
-
-    public VerbalExpression tab() {
-        this.add("\\t");
-        return this;
-    }
-
-    public VerbalExpression word() {
-        this.add("\\w+");
-        return this;
-    }
-
-    public VerbalExpression anyOf(String value) {
-        value = sanitize(value);
-        this.add("[" + value + "]");
-        return this;
-    }
-
-    public VerbalExpression any(String value) {
-        this.anyOf(value);
-        return this;
-    }
-
-    public VerbalExpression range(Object[] args) {
-        /*if (args.length % 2 != 0) throw new Exception ("An arguement doesn't have a matching ending range.");*/
-        
-        String value = "[";
-        for(int _from = 0, len = args.length; _from < len; _from += 2) {
-            int _to = _from+1;
-            if (args.length <= _to) break;
-            /*if (!args[_from].getClass().equals(args[_to].getClass())) throw new Exception ("Arguement types don't match.");*/
-            
-            String from = sanitize((String)args[_from]);
-            String to = sanitize((String)args[_to]);
-            value += from + "-" + to;
+        private String sanitize(final String pValue) {
+            Matcher matcher = Pattern.compile("").matcher("").usePattern(Pattern.compile("[^\\w]"));
+            int lastEnd = 0;
+            String result = "";
+            matcher.reset(pValue);
+            boolean matcherCalled = false;
+            while (matcher.find()) {
+                matcherCalled = true;
+                if (matcher.start() != lastEnd) {
+                    result += pValue.substring(lastEnd, matcher.start());
+                }
+                result += "\\" + pValue.substring(matcher.start(), matcher.end());
+                lastEnd = matcher.end();
+            }
+            if (!matcherCalled) {
+                return pValue;
+            }
+            return result;
         }
 
-        value += "]";
-
-        this.add(value);
-        return this;
-    }
-
-    public VerbalExpression addModifier(char modifier) {
-        switch (modifier) {
-            case 'd':
-                modifiers |= Pattern.UNIX_LINES;
-                break;
-            case 'i':
-                modifiers |= Pattern.CASE_INSENSITIVE;
-                break;
-            case 'x':
-                modifiers |= Pattern.COMMENTS;
-                break;
-            case 'm':
-                modifiers |= Pattern.MULTILINE;
-                break;
-            case 's':
-                modifiers |= Pattern.DOTALL;
-                break;
-            case 'u':
-                modifiers |= Pattern.UNICODE_CASE;
-                break;
-            case 'U':
-                modifiers |= Pattern.UNICODE_CHARACTER_CLASS;
-                break;
-            default:
-                break;
+        public Builder add(String pValue) {
+            this.source += pValue;
+            return this;
         }
 
-        this.updatePattern();
-        return this;
-    }
-
-    public VerbalExpression removeModifier(char modifier) {
-        switch (modifier) {
-            case 'd':
-                modifiers ^= Pattern.UNIX_LINES;
-                break;
-            case 'i':
-                modifiers ^= Pattern.CASE_INSENSITIVE;
-                break;
-            case 'x':
-                modifiers ^= Pattern.COMMENTS;
-                break;
-            case 'm':
-                modifiers ^= Pattern.MULTILINE;
-                break;
-            case 's':
-                modifiers ^= Pattern.DOTALL;
-                break;
-            case 'u':
-                modifiers ^= Pattern.UNICODE_CASE;
-                break;
-            case 'U':
-                modifiers ^= Pattern.UNICODE_CHARACTER_CLASS;
-                break;
-            default:
-                break;
+        public VerbalExpression build() {
+            pattern = Pattern.compile(this.prefixes + this.source + this.suffixes, this.modifiers);
+            return new VerbalExpression(this);
         }
 
-        this.updatePattern();
-        return this;
-    }
-
-    public VerbalExpression withAnyCase(boolean enable) {
-        if (enable) this.addModifier( 'i' );
-        else this.removeModifier( 'i' );
-        this.updatePattern();
-        return this;
-    }
-
-    public VerbalExpression withAnyCase() {
-        return withAnyCase(true);
-    }
-
-    public VerbalExpression searchOneLine(boolean enable) {
-        if (enable) this.removeModifier( 'm' );
-        else this.addModifier( 'm' );
-        this.updatePattern();
-        return this;
-    }
-
-    public VerbalExpression multiple(String value) {
-        /*value = this.sanitize(value);*/
-        /*System.out.println("value.charAt(0): "+value.charAt(0));*///Start Point
-        switch (value.charAt(0)) {
-            case '*':
-            case '+':
-                break;
-            default:
-                value += '+';
+        public Builder startOfLine(boolean pEnable) {
+            this.prefixes = pEnable ? "^" : "";
+            return this;
         }
-        this.add(value);
-        return this;
+
+        public Builder startOfLine() {
+            return startOfLine(true);
+        }
+
+        public Builder endOfLine(final boolean pEnable) {
+            this.suffixes = pEnable ? "$" : "";
+            return this;
+        }
+
+        public Builder endOfLine() {
+            return endOfLine(true);
+        }
+
+        public Builder then(String pValue) {
+            this.add("(" + sanitize(pValue) + ")");
+            return this;
+        }
+
+        public Builder find(String value) {
+            this.then(value);
+            return this;
+        }
+
+        public Builder maybe(final String pValue) {
+            this.add("(" + sanitize(pValue) + ")?");
+            return this;
+        }
+
+        public Builder anything() {
+            this.add("(.*)");
+            return this;
+        }
+
+        public Builder anythingButNot(final String pValue) {
+            this.add("([^" + sanitize(pValue) + "]*)");
+            return this;
+        }
+
+        public Builder something() {
+            this.add("(.+)");
+            return this;
+        }
+
+        public Builder somethingButNot(final String pValue) {
+            this.add("([^" + sanitize(pValue) + "]+)");
+            return this;
+        }
+
+        public Builder lineBreak() {
+            this.add("(\\n|(\\r\\n))");
+            return this;
+        }
+
+        public Builder br() {
+            this.lineBreak();
+            return this;
+        }
+
+        public Builder tab() {
+            this.add("\\t");
+            return this;
+        }
+
+        public Builder word() {
+            this.add("\\w+");
+            return this;
+        }
+
+        public Builder anyOf(final String pValue) {
+            this.add("[" + sanitize(pValue) + "]");
+            return this;
+        }
+
+        public Builder any(final String value) {
+            this.anyOf(value);
+            return this;
+        }
+
+        public Builder range(String... pArgs) {
+            String value = "[";
+            for (int _to = 1; _to < pArgs.length; _to += 2) {
+                String from = sanitize((String)pArgs[_to - 1]);
+                String to = sanitize((String)pArgs[_to]);
+
+                value += from + "-" + to;
+            }
+            value += "]";
+
+            this.add(value);
+            return this;
+        }
+
+        public Builder addModifier(final char pModifier) {
+            switch (pModifier) {
+                case 'd':
+                    modifiers |= Pattern.UNIX_LINES;
+                    break;
+                case 'i':
+                    modifiers |= Pattern.CASE_INSENSITIVE;
+                    break;
+                case 'x':
+                    modifiers |= Pattern.COMMENTS;
+                    break;
+                case 'm':
+                    modifiers |= Pattern.MULTILINE;
+                    break;
+                case 's':
+                    modifiers |= Pattern.DOTALL;
+                    break;
+                case 'u':
+                    modifiers |= Pattern.UNICODE_CASE;
+                    break;
+                case 'U':
+                    modifiers |= Pattern.UNICODE_CHARACTER_CLASS;
+                    break;
+                default:
+                    break;
+            }
+
+            return this;
+        }
+
+        public Builder removeModifier(final char pModifier) {
+            switch (pModifier) {
+                case 'd':
+                    modifiers ^= Pattern.UNIX_LINES;
+                    break;
+                case 'i':
+                    modifiers ^= Pattern.CASE_INSENSITIVE;
+                    break;
+                case 'x':
+                    modifiers ^= Pattern.COMMENTS;
+                    break;
+                case 'm':
+                    modifiers ^= Pattern.MULTILINE;
+                    break;
+                case 's':
+                    modifiers ^= Pattern.DOTALL;
+                    break;
+                case 'u':
+                    modifiers ^= Pattern.UNICODE_CASE;
+                    break;
+                case 'U':
+                    modifiers ^= Pattern.UNICODE_CHARACTER_CLASS;
+                    break;
+                default:
+                    break;
+            }
+
+            return this;
+        }
+
+        public Builder withAnyCase(boolean pEnable) {
+            if (pEnable) {
+                this.addModifier('i');
+            } else {
+                this.removeModifier('i');
+            }
+            return this;
+        }
+
+        public Builder withAnyCase() {
+            return withAnyCase(true);
+        }
+
+        public Builder searchOneLine(boolean pEnable) {
+            if (pEnable) {
+                this.removeModifier('m');
+            } else {
+                this.addModifier('m');
+            }
+            return this;
+        }
+
+        public Builder multiple(final String pValue) {
+            if (pValue.length() == 0) 
+                this.add("+");
+            else if (pValue.charAt(0) == '*')
+                this.add("*");
+            else
+                this.add("+");
+            return this;
+        }
+
+        public Builder or(final String pValue) {
+            if (this.prefixes.indexOf("(") == -1) {
+                this.prefixes += "(";
+            }
+            if (this.suffixes.indexOf(")") == -1) {
+                this.suffixes = ")" + this.suffixes;
+            }
+
+            this.add(")|(");
+            if (pValue != null) {
+                this.then(pValue);
+            }
+            return this;
+        }
     }
 
-    public VerbalExpression or(String value) {
-        if (this.prefixes.indexOf("(") == -1) this.prefixes += "(";
-        if (this.suffixes.indexOf(")") == -1) this.suffixes = ")" + this.suffixes;
-
-        this.add(")|(");
-        if (value != null) this.then(value);
-        return this;
+    public boolean testExact(final String pToTest) {
+        boolean ret = false;
+        if (pToTest != null) {
+            ret = pattern.matcher(pToTest).matches();
+        }
+        return ret;
     }
 
-    public boolean testExact(String toTest) {
-        return Pattern.compile(this.pattern, this.modifiers).matcher(toTest).matches();
+    public boolean test(final String pToTest) {
+        boolean ret = false;
+        if (pToTest != null) {
+            ret = pattern.matcher(pToTest).find();
+        }
+        return ret;
     }
 
-    public boolean test(String toTest) {
-        return Pattern.compile(this.pattern, this.modifiers).matcher(toTest).find();
+    private VerbalExpression(final Builder pBuilder) {
+        pattern = pBuilder.pattern;
     }
+    
+    public String getText(String toTest) {
+        Matcher m = pattern.matcher(toTest);
+        StringBuilder result = new StringBuilder();
+        while (m.find()){
+            result.append(m.group());
+        }
+        return result.toString();
+    }    
 
+    @Override
     public String toString() {
-        return this.pattern.toString();
+        return pattern.pattern();
     }
 }
