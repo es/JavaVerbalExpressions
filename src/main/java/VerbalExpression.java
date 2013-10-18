@@ -222,15 +222,12 @@ public class VerbalExpression {
         }
 
         public Builder multiple(final String pValue) {
-            String value = this.sanitize(pValue);
-            switch (value.charAt(0)) {
-                case '*':
-                case '+':
-                    break;
-                default:
-                    value += '+';
-            }
-            this.add(value);
+            if (pValue.length() == 0) 
+                this.add("+");
+            else if (pValue.charAt(0) == '*')
+                this.add("*");
+            else
+                this.add("+");
             return this;
         }
 
